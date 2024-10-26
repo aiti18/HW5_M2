@@ -1,194 +1,99 @@
 package com.example.hw5_m2;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.button.MaterialButton;
+
+import java.util.BitSet;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView textView;
-    private String input = "";
-    private String operator = "";
-    private double firstNumber = 0.0;
-    private double secondNumber = 0.0;
-    private boolean isNewOperation = true;
-    private boolean hasOperator = false;
+    TextView resultTV;
+    int firstNumber, secondNumber;
+    boolean isOperation;
+    String operator;
+    Button btnResult;
+    Button btnEqual;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textView = findViewById(R.id.textView);
+        resultTV = findViewById(R.id.textView);
+        btnResult = findViewById(R.id.btn_result);
+        btnEqual = findViewById(R.id.buttonEquals);
 
-        Button button0 = findViewById(R.id.button0);
-        Button button1 = findViewById(R.id.button1);
-        Button button2 = findViewById(R.id.button2);
-        Button button3 = findViewById(R.id.button3);
-        Button button4 = findViewById(R.id.button4);
-        Button button5 = findViewById(R.id.button5);
-        Button button6 = findViewById(R.id.button6);
-        Button button7 = findViewById(R.id.button7);
-        Button button8 = findViewById(R.id.button8);
-        Button button9 = findViewById(R.id.button9);
-        Button buttonDot = findViewById(R.id.buttonDot);
-        Button buttonAdd = findViewById(R.id.buttonAdd);
-        Button buttonSubtract = findViewById(R.id.buttonSubtract);
-        Button buttonMultiply = findViewById(R.id.buttonMultiply);
-        Button buttonDivide = findViewById(R.id.buttonDivide);
-        Button buttonEquals = findViewById(R.id.buttonEquals);
-        Button buttonClear = findViewById(R.id.buttonClear);
+        btnResult.setVisibility(View.INVISIBLE);
 
-        View.OnClickListener numberClickListener = new View.OnClickListener() {
+        btnResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Button button = (Button) v;
-                appendNumber(button.getText().toString());
-            }
-        };
-
-        button0.setOnClickListener(numberClickListener);
-        button1.setOnClickListener(numberClickListener);
-        button2.setOnClickListener(numberClickListener);
-        button3.setOnClickListener(numberClickListener);
-        button4.setOnClickListener(numberClickListener);
-        button5.setOnClickListener(numberClickListener);
-        button6.setOnClickListener(numberClickListener);
-        button7.setOnClickListener(numberClickListener);
-        button8.setOnClickListener(numberClickListener);
-        button9.setOnClickListener(numberClickListener);
-        buttonDot.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                appendDot();
-            }
-        });
-
-        buttonAdd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setOperator("+");
-            }
-        });
-        buttonSubtract.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setOperator("-");
-            }
-        });
-        buttonMultiply.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setOperator("*");
-            }
-        });
-        buttonDivide.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setOperator("/");
-            }
-        });
-
-        buttonEquals.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                calculate();
-            }
-        });
-
-        buttonClear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clear();
+                String result = calculateOperation(firstNumber, secondNumber, operator);
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                intent.putExtra("result", result);
+                startActivity(intent);
             }
         });
     }
 
-    private void appendNumber(String number) {
-        if (isNewOperation) {
-            input = "";
-            isNewOperation = false;
-        }
-        input += number;
-        textView.setText(input);
-    }
-
-    private void appendDot() {
-        if (!input.contains(".")) {
-            if (isNewOperation) {
-                input = "0";
-                isNewOperation = false;
+    public void numberClick(View view) {
+        if (view instanceof MaterialButton) {
+            String text = ((MaterialButton) view).getText().toString();
+            if (isOperation) {
+                resultTV.setText("");
             }
-            input += ".";
-            textView.setText(input);
+            resultTV.append(text);
         }
+        isOperation = false;
     }
 
-    private void setOperator(String op) {
-        if (!input.isEmpty()) {
-            if (!hasOperator) {
-                firstNumber = Double.parseDouble(input);
-                input = "";
-                operator = op;
-                isNewOperation = true;
-                hasOperator = true;
-            } else {
-                calculate();
-                operator = op;
-                hasOperator = true;
-            }
+    public void operationClick(View view) {
+        btnResult.setVisibility(View.INVISIBLE);
+        if (view.getId() == R.id.buttonClear) {
+            resultTV.setText("");
+        } else if (view.getId() == R.id.buttonAdd) {
+            firstNumber = Integer.valueOf(resultTV.getText().toString());
+            operator = "+";
+        } else if (view.getId() == R.id.buttonSubtract) {
+            firstNumber = Integer.valueOf(resultTV.getText().toString());
+            operator = "-";
+        } else if (view.getId() == R.id.buttonMultiply) {
+            firstNumber = Integer.valueOf(resultTV.getText().toString());
+            operator = "*";
+        } else if (view.getId() == R.id.buttonDivide) {
+            firstNumber = Integer.valueOf(resultTV.getText().toString());
+            operator = "/";
+        } else if (view.getId() == R.id.buttonEquals) {
+            btnResult.setVisibility(View.VISIBLE);
+            secondNumber = Integer.valueOf(resultTV.getText().toString());
+            resultTV.setText(calculateOperation(firstNumber, secondNumber, operator));
         }
+        isOperation = true;
     }
 
-    private void calculate() {
-        if (input.isEmpty() || !hasOperator) {
-            return;
-        }
-        secondNumber = Double.parseDouble(input);
-        double result = 0.0;
+    private String calculateOperation(int firstNumber, int secondNumber, String operator) {
         switch (operator) {
             case "+":
-                result = firstNumber + secondNumber;
-                break;
+                return String.valueOf(firstNumber + secondNumber);
             case "-":
-                result = firstNumber - secondNumber;
-                break;
+                return String.valueOf(firstNumber - secondNumber);
             case "*":
-                result = firstNumber * secondNumber;
-                break;
+                return String.valueOf(firstNumber * secondNumber);
             case "/":
                 if (secondNumber != 0) {
-                    result = firstNumber / secondNumber;
+                    return String.valueOf(firstNumber / secondNumber);
                 } else {
-                    textView.setText("Error");
-                    return;
+                    return "0";
                 }
-                break;
+            default:
+                return "";
         }
-        textView.setText(formatResult(result));
-        input = String.valueOf(result);
-        firstNumber = result;
-        isNewOperation = true;
-        hasOperator = false;
-    }
-
-    private String formatResult(double result) {
-        if (result == (long) result) {
-            return String.format("%d", (long) result);
-        } else {
-            return String.format("%s", result);
-        }
-    }
-
-    private void clear() {
-        input = "";
-        operator = "";
-        firstNumber = 0.0;
-        secondNumber = 0.0;
-        isNewOperation = true;
-        hasOperator = false;
-        textView.setText("0");
     }
 }
